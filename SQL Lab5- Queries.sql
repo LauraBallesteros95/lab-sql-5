@@ -1,126 +1,61 @@
--- Use sakila database.
--- Get all the data from tables actor, film and customer.
--- Get film titles.
--- Get unique list of film languages under the alias language. Note that we are not asking you to obtain the language per each film, but this is a good time to think about how you might get that information in the future.
--- 5.1 Find out how many stores does the company have?
--- 5.2 Find out how many employees staff does the company have?
--- 5.3 Return a list of employee first names only?
+-- LAB 5 QUERIES
+-- Drop column picture from staff.
+alter table staff
+drop column picture;
+-- A new person is hired to help Jon. Her name is TAMMY SANDERS, and she is a customer. Update the database accordingly.
+select * from customer where first_name = 'TAMMY' and last_name = 'SANDERS';
+insert into staff 
+values (3, 'Tammy', 'Sanders', 79, 'TAMMY.SANDERS@sakilacustomer.org', 2, 1, 'Tammy', 'contraseñadetammy', '2006-02-15 06:00:16');
+select * from staff;
+-- Add rental for movie "Academy Dinosaur" by Charlotte Hunter from Mike Hillyer at Store 1. You can use current date for the rental_date column in the rental table. Hint: Check the columns in the table rental and see what information you would need to add there. You can query those pieces of information. For eg., you would notice that you need customer_id information as well. To get that you can use the following query:
+select * from rental; -- rental_id, rental_date, inventory_id, customer_id, return_date, staff_id, last_update
+select rental_id from rental order by rental_id desc limit 1; -- PARA SACAR EL ORDEN DESC - DESCENDENTE 16049
+select current_timestamp; -- USAMOS ESTA FORMULA PARA SACAR LA FECHA ACTUAL 2023-12-12 21:03:23
+select inventory_id from rental order by inventory_id desc limit 1; -- SACAMOS EL ORDEN DLE INVENTARIO EN ORDEN DESC 4581
+select customer_id from customer 
+where first_name = 'Charlotte' and last_name = 'Hunter'; -- 130
+select rental_duration from film 
+where title = 'Academy Dinosaur'; -- 6 2023-12-18 21:03:23
+select staff_id from staff
+where first_name = 'Mike'; -- 1
+insert into rental 
+values(16050, '2023-12-12 21:03:23', 4582, 130,'2023-12-18 21:03:23', 1,'2023-12-12 21:03:23');
+select * from rental where rental_id = 16050;
+set foreign_key_checks = 0; -- Te permite modificar los valores anteriores, para volver a fijarlo, hay que ponerle 1, en vez de 0
+set foreign_key_checks = 1;
 
--- Use sakila database.
-use sakila;
--- Get all the data from tables actor, film and customer.
-select * from film;
-select * from actor;
-select * from customer;
--- Get film titles.
-select  title from film;
--- Get unique list of film languages under the alias language.
-select distinct language_id as language from film;
--- Find out how many stores does the company have?
-select count(store_id) as store_count from store;
--- Find out how many employees staff does the company have?
-select count(staff_id) as staff_count from staff;
--- Return a list of employee first names only?
-select first_name from staff;
+-- Delete non-active users, but first, create a backup table deleted_users to store customer_id, email, and the date for the users that would be deleted. Follow these steps:
+-- Check if there are any non-active users
+-- Create a table backup table as suggested
+-- Insert the non active users in the table backup table
+-- Delete the non active users from the table customer
 
--- LAB 2
+CREATE TABLE deleted_users (  -- CREAR UNA TABLA
+`customer_id` int UNIQUE NOT NULL, 
+`email` char(50) DEFAULT NULL,
+`date` char(50) DEFAULT NULL,
+CONSTRAINT PRIMARY KEY (customer_id)
+);
+select customer_id, email, last_update from customer
+where active = 0;
 
--- Select all the actors with the first name ‘Scarlett’.
--- Select all the actors with the last name ‘Johansson’.
--- How many films (movies) are available for rent?
--- How many films have been rented?
--- What is the shortest and longest rental period?
--- What are the shortest and longest movie duration? Name the values max_duration and min_duration.
--- What's the average movie duration?
--- What's the average movie duration expressed in format (hours, minutes)?
--- How many movies longer than 3 hours?
--- Get the name and email formatted. Example: Mary SMITH - mary.smith@sakilacustomer.org.
--- What's the length of the longest film title?
-
--- Select all the actors with the first name ‘Scarlett’.
-select * from actor where first_name = 'Scarlett';
--- Select all the actors with the last name ‘Johansson’.
-select * from actor where last_name = 'Johansson';
--- How many films (movies) are available for rent?
-select count(*) as film_count from film where rental_duration > 0;
--- How many films have been rented?
-select count(distinct inventory_id) as film_count from rental;
--- What is the shortest and longest rental period?
--- 
--- What are the shortest and longest movie duration? Name the values max_duration and min_duration.
-select min(length) as min_duration, max(length) as max_duration from film;
--- What's the average movie duration?
-select avg(length) as average_duration from film;
--- What's the average movie duration expressed in format (hours, minutes)?
-select concat(
-       floor(avg(length)/60), 'hours', 
-       mod(avg(length), 60), 'minutes'
-       ) as average_duration 
-from film;
--- How many movies longer than 3 hours?
-select count(*) as movies_count
-from film
-where length > 180;
--- Get the name and email formatted. Example: Mary SMITH - mary.smith@sakilacustomer.org.
-select concat(first_name, ' ' , last_name, '-', email) as formatted_info
-from customer;
--- What's the length of the longest film title?
-select max(length(title)) as longest_title_length from film;
-
-
--- LAB 3
--- How many distinct (different) actors' last names are there?
-select count(distinct last_name) as "Number of different actors' last name" from sakila.actor;
--- In how many different languages where the films originally produced? (Use the column language_id from the film table)
-select count(distinct language_id) as "Number of different languages" from sakila.film;
--- How many movies were released with "PG-13" rating?
-select count(*) as movies_count
-from film
-where rating = 'PG-13';
--- Get 10 the longest movies from 2006.
- select title, length
- from film
- where release_year = 2006
- order by length desc
- limit 10;
- -- How many days has been the company operating (check DATEDIFF() function)?
-select datediff(max(rental_date), min(rental_date)) as days_operating
-from rental;
--- Show rental info with additional columns month and weekday. Get 20.
-select *, month(rental_date) as rental_month, weekday(rental_date) as rental_weekday
-from rental
-limit 20;
--- Add an additional column day_type with values 'weekend' and 'workday' depending on the rental day of the week.
-select *,
-       case when dayname(rental_date) in ('Saturday', 'Sunday') then 'weekend'
-            else 'workday'
-       end as day_type
-from rental;
--- How many rentals were in the last month of activity?
-select count(*) as rental_count
-from rental
-where date_format(rental_date, '%Y-%m') = date_format(date_sub(curdate(), interval 1 month), '%Y-%m');
-
--- LAB 4
--- Get film ratings.
-select rating from film;
--- Get release years.
-select distinct release_year from film;
--- Get all films with ARMAGEDDON in the title
-select * from film where title like '%ARMAGEDDON%';
--- Get all films with APOLLO in the title
-select * from film where title like '%APOLLO%';
--- Get all films which title ends with APOLLO.
-select * from film where title like '%APOLLO'; 
--- Get all films with word DATE in the title.
-select * from film where title like '%DATE%';
--- Get 10 films with the longest title.
-select * from film order by length(title) desc limit 10;
--- Get 10 the longest films. (??)
-select * from film order by max_duration desc limit 10;
--- How many films include Behind the Scenes content? (??)
-select count(*) as film_with_behing_scenes from film where behind_the_scenes = 'Yes';
--- List films ordered by release year and title in alphabetical order.
-select *
-from film
-order by release_year, title;
+insert into deleted_users -- para introducir los valores en la tabla que hemos creado
+values  -- añadimos los valores uno a uno
+('16','SANDRA.MARTIN@sakilacustomer.org','2006-02-15 04:57:20'),
+('64','JUDITH.COX@sakilacustomer.org','2006-02-15 04:57:20'),
+('124','SHEILA.WELLS@sakilacustomer.org','2006-02-15 04:57:20'),
+('169','ERICA.MATTHEWS@sakilacustomer.org','2006-02-15 04:57:20'),
+('241','HEIDI.LARSON@sakilacustomer.org','2006-02-15 04:57:20'),
+('271','PENNY.NEAL@sakilacustomer.org','2006-02-15 04:57:20'),
+('315','KENNETH.GOODEN@sakilacustomer.org','2006-02-15 04:57:20'),
+('368','HARRY.ARCE@sakilacustomer.org','2006-02-15 04:57:20'),
+('406','NATHAN.RUNYON@sakilacustomer.org','2006-02-15 04:57:20'),
+('446','THEODORE.CULP@sakilacustomer.org','2006-02-15 04:57:20'),
+('482','MAURICE.CRAWLEY@sakilacustomer.org','2006-02-15 04:57:20'),
+('510','BEN.EASTER@sakilacustomer.org','2006-02-15 04:57:20'),
+('534','CHRISTIAN.JUNG@sakilacustomer.org','2006-02-15 04:57:20'),
+('558','JIMMIE.EGGLESTON@sakilacustomer.org','2006-02-15 04:57:20'),
+('592','TERRANCE.ROUSH@sakilacustomer.org','2006-02-15 04:57:20');
+select * from deleted_users;  -- para revisar la tabla creada con nuevos valores
+set foreign_key_checks = 0; -- Te permite modificar los valores anteriores, para volver a fijarlo, hay que ponerle 1, en vez de 0
+delete from customer where active = 0;
